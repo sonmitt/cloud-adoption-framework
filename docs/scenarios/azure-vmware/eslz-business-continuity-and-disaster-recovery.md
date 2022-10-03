@@ -17,7 +17,7 @@ ms.custom: think-tank, e2e-azure-vmware
 :::image type="content" source="../_images/eslz-bcdr-1.2.png" alt-text="Diagram that shows a BCDR flow chart." border="false" Lightbox="../_images/eslz-bcdr-1.2.png":::
 
  > [!NOTE]
- > For disaster recovery of compute and memory intensive workloads, the storage for pilot light environment should be equal to primary site. Compute capacity can be less.
+ > For disaster recovery of compute and memory intensive Azure VMware solution workloads, the storage for pilot light environment should be equal to primary site.
 
 ## Business continuity design considerations
 
@@ -48,25 +48,25 @@ ms.custom: think-tank, e2e-azure-vmware
 
 - Use [Storage Pools](/azure/backup/backup-mabs-add-storage) with MABS Server for enhanced disk IOPS/throughput. Use [Tiered Storage](https://techcommunity.microsoft.com/t5/system-center-blog/achieve-faster-backups-using-tiered-storage-with-dpm-and-mabs/ba-p/1596069) on MABS server for enhanced backup operations.
 
+- Currently, MABS doesn't support cross region restore for AVS private cloud. Refer [partner backup solutions](/azure/azure-vmware/ecosystem-back-up-vms) and [disaster recovery section](./eslz-business-continuity-and-disaster-recovery.md#disaster-recovery-design-considerations) when cross region Azure VMware Solution recovery is required. 
+
+- For information on the supported features of the partner backup solutions please refer respective partner documenation.
+
 - Azure VMware Solution platform components like vCenter Server, NSX-T Manager, or HCX Manager are managed services for which backup is managed by Azure, if you face any issues [Create an Azure Support request](/azure/azure-portal/supportability/how-to-create-azure-support-request).
-
-- Currently, MABS doesn't support cross region restore for AVS private cloud. Refer partner backup solutions or [disaster recovery section](./eslz-business-continuity-and-disaster-recovery.md#disaster-recovery-design-considerations) when cross region Azure VMware Solution recovery is required. 
-
-- For latest information on the partner backup solutions supported feature set please refer the partner backup solutions documenation.
 
 ## Disaster recovery design considerations
 
-- Align business requirements with recovery time objectives (RTO), capacity, and recovery point objectives (RPO) for applications and VM tiers. Plan and design accordingly to achieve them using the most appropriate replication technology. Application-native, like SQL Always On availability group, or non-native like VMware Site Recovery Manager (SRM).
+- Align business requirements with recovery time objectives (RTO), capacity, and recovery point objectives (RPO) for applications and VM tiers. Plan and design accordingly to achieve these objectives using the most appropriate replication technology. For example, Application-native, like SQL Always On availability group, or non-native like VMware Site Recovery Manager (SRM).
 
 - Make a decision as to what the target disaster recovery site for the protected Azure VMware Solution private cloud will be. This site influences which disaster recovery tooling is suitable to the environment.
 
 - An analysis and decision should be made to determine which subset of AVS workloads require protection in case of a DR event. Consider categorizing the workloads based on priority, such as P0 for Business Critical workload and P1, P2, P3 for remaining workloads respectively which are important but not so critical for business to be operational (this is usually defined in the customer Business Continuity Plan with well defined SLAs). It will help to control the costs associated with the DR implementation. 
 
-- It is not always needed to failover non-production environments (Dev, Test, UAT, etc) for DR. It is advised to run pilot light AVS SDDC at the secondary site with reduced capacity (for production/critical workloads) and scale up to add more nodes during the DR event to save costs. 
+- In most of the cases it is not required to failover non-production environments (dev, test, UAT, etc) to secondary site using DR. Hence, it is advised to run pilot light AVS private cloud at the secondary site with reduced capacity (for only critical workloads) to save on costs. In case additional capacity is needed, scale out to add more nodes during the DR event. 
 
 - Set up functional domain roles, like Active Directory domain controllers, in the secondary environment.
 
-- Partner Solutions like JetStream Software and Zerto are validated on Azure VMware Solution. They support most of the disaster recovery scenarios and can provide faster recovery with near zero RPO (recovery point objective). 
+- Partner Solutions like JetStream Software and Zerto are GA and validated on Azure VMware Solution. They support most of the disaster recovery scenarios and can provide faster recovery with near zero RPO (recovery point objective). 
 
 - Migration from third-party locations into Azure VMware Solution has support through VMware Site Recovery Manager, Jetstream and Zerto through scale.
 
@@ -74,11 +74,11 @@ ms.custom: think-tank, e2e-azure-vmware
 
 - To enable disaster recovery between Azure VMware Solution private clouds in distinct Azure regions, you need to enable ExpressRoute Global Reach between both back-end ExpressRoute circuits. These circuits create primary to secondary private cloud connectivity when required for solutions like VMware SRM and VMware HCX for disaster recovery.
 
-- To enable disaster recovery between Azure VMware Solution private clouds in same Azure regions, you need to enable AVS Interconnect. It creates a routing link between the management and workload networks of the AVS private clouds to enable network communication between the clouds. Ensure that routed IP address space in each AVS private cloud is unique and doesn't overlap.
+- To enable disaster recovery between Azure VMware Solution private clouds in same Azure regions, you need to enable [AVS Interconnect](/azure/azure-vmware/connect-multiple-private-clouds-same-region). It creates a routing link between the management and workload networks of the AVS private clouds to enable network communication between the clouds. Ensure that routed IP address space in each AVS private cloud is unique and doesn't overlap.
 
-- When working with disaster recovery, you can use the same source IP address spaces from the primary Azure region to the secondary Azure region. However, it requires additional design and engineering efforts to incorporate into the solution.
+- When working with disaster recovery, you can use the same source IP address space from the primary Azure region to the secondary Azure region. However, it requires additional design and engineering efforts.
 
-  - **Retain the same IP addresses:** If there is a business requirement, the VMs at the secondary AVS site can be recovered using the same source IP address as the primary site. For this method, create isolated VLANs or NSX-T segments in the secondary AVS site and ensure that none of these isolated VLANs or segments are connected to the environment. Modify your disaster recovery routes to reflect that the subnet has moved to the secondary AVS site and the new IP addressess location. While this method works, it also creates engineering overhead when one is aiming for fully automated DR orchestration.
+  - **Retain the same IP addresses:** The virtual machines at the secondary AVS site can be recovered using the same source IP address as the primary site. For this method, create isolated VLANs or NSX-T segments in the secondary AVS site and ensure that none of these isolated VLANs or segments are connected to the environment. Modify your disaster recovery routes to reflect that the subnet has moved to the secondary AVS site and the new IP addressess location. While this method works, it also creates engineering overhead when one is aiming for fully automated DR orchestration.
 
   - **Use different IP addresses:** You can also use different IP addresses for recovered VMs. If the VM is moved to a secondary site, the recovery plan within the VMware Site Recovery Manager will detail the custom IP map. Select this map for the change of IP address. VMs will be brought up in the new NSX-T segments and new IP addresses will be assigned. The tooling can differ for different DR solution.
 
@@ -101,13 +101,15 @@ ms.custom: think-tank, e2e-azure-vmware
 
   :::image type="content" source="../_images/eslz-bcdr-6.png" alt-text="Diagram that shows a detailed example of continuous vSphere replication between two Azure VMware Solution sites." border="false":::
 
-- For mission critical application [Zerto](/azure/azure-vmware/deploy-zerto-disaster-recovery#scenario-3-azure-vmware-solution-to-iaas-vms-cloud-disaster-recovery) and [JetStream](/azure/azure-vmware/deploy-disaster-recovery-using-jetstream) are available as disaster recovery solution for AVS private cloud. JetStream and Zerto are built on the foundation of Continuous Data Protection (CDP), using VMware vSphere API for I/O filtering (VAIO) framework, which enables minimal or close to no data loss.  It also enables cost-effective DR by using minimal resources at the DR site.
+- For mission critical applications [Zerto](/azure/azure-vmware/deploy-zerto-disaster-recovery#scenario-3-azure-vmware-solution-to-iaas-vms-cloud-disaster-recovery) and [JetStream](/azure/azure-vmware/deploy-disaster-recovery-using-jetstream) are available as disaster recovery solution for AVS private cloud. JetStream and Zerto are built on the foundation of Continuous Data Protection (CDP), using VMware vSphere API for I/O filtering (VAIO) framework, which enables minimal or close to no data loss.  It also enables cost-effective DR by using minimal resources at the DR site.
 
 - Use [Zerto](/azure/azure-vmware/deploy-zerto-disaster-recovery#scenario-3-azure-vmware-solution-to-iaas-vms-cloud-disaster-recovery) if Azure IaaS virtual machines are the disaster recovery target for the Azure VMware Solution private cloud.
 
-- Minimize manual input by using automated recovery plans within each of the respective DR solutions. These plans are helpful when working with either VMware Site Recovery Manager ot partner solutions to provide disaster recovery for the Azure VMware Solution private cloud. A recovery plan gathers machines into recovery groups for failover. It then helps to define a systematic recovery process by creating independent units that can fail over.
+- Minimize manual input by using automated recovery plans within each of the respective DR solutions. These plans are helpful when working with either VMware Site Recovery Manager or partner solutions to provide disaster recovery for the Azure VMware Solution private cloud. A recovery plan gathers machines into recovery groups for failover. It then helps to define a systematic recovery process by creating independent units that can fail over.
 
 - We recommend using the [geopolitical region pair](/azure/availability-zones/cross-region-replication-azure) as the secondary disaster recovery environment. Some of the benefits of regional pairs are priortized region recovery, sequential updates, physical isolation and data residency. 
+
+- We recommend setting up at least once a year smoke/trial tests ensuring recovery plans to work. The level of effort running these will be determined by the orchestration capabilities of the chosen tool.
 
 - Keep address spaces different to avoid overlapping IP addresses between the two sites. For example, you can use `192.168.0.0/16` for region 1 and `10.0.0.0/16` for region 2. 
 
