@@ -115,6 +115,8 @@ ms.custom: think-tank, e2e-azure-vmware
 
 - Use ExpressRoute Global Reach connectivity between the primary and secondary Azure VMware Solution private clouds. See more networking considerations and recommendations in the [relevant design area](./eslz-network-topology-connectivity.md).
 
+- We recommend setting up at least once a year smoke/trial tests ensuring recovery plans to work.  The level of effort running these will be determined by the orchestration capabilities of the chosen tool
+
 ## Next steps
 
 Learn about considerations and recommendations for the initial deployment of Azure VMware Solution and guidance for operational automation.
